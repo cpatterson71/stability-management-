@@ -1,0 +1,8 @@
+streamlit
+pandas
+python-dateutil
+openpyxl
+python-docx
+xlsxwriter
+python-dotenv
+boto3

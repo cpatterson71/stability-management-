@@ -1,0 +1,27 @@
+# This file tells AWS App Runner how to build and run your Streamlit application.
+version: 1.0
+runtime: python-3.11
+
+# The 'build' section defines commands to run to build your application.
+build:
+  commands:
+    # App Runner runs this command from the root of your repository.
+    build:
+      - pip install -r requirements.txt
+
+# The 'run' section defines the command to start your application.
+run:
+  # This command starts the Streamlit application.
+  # --server.port 8080 tells Streamlit to run on the port App Runner expects.
+  # --server.headless true is crucial for running in a container.
+  command: streamlit run app.py --server.port 8080 --server.headless true
+  network:
+    # This is the port your application will listen on.
+    port: 8080
+
+# The 'healthcheck' section tells App Runner how to check if your app is healthy.
+# Streamlit has a built-in health check endpoint.
+healthcheck:
+  path: /_stcore/health
+  interval: 20  # seconds
+  timeout: 15   # seconds

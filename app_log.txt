@@ -1,0 +1,90 @@
+2026-01-09 10:52:56,423 - INFO - --- app.py script started ---
+2026-01-09 10:52:56,424 - INFO - --- Script is being run directly ---
+2026-01-09 10:52:56,424 - INFO - --- main() function started ---
+2026-01-09 10:52:56,677 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:52:56,681 - INFO - Database connection successful.
+2026-01-09 10:52:56,681 - INFO - Attempting to create tables.
+2026-01-09 10:52:56,684 - INFO - Tables created successfully.
+2026-01-09 10:52:56,684 - INFO - Database connection and table creation complete.
+2026-01-09 10:52:56,688 - INFO - Master tests loaded from database into session state.
+2026-01-09 10:52:56,688 - INFO - Defining tabs.
+2026-01-09 10:52:56,689 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:52:56,713 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:52:56,716 - INFO - Entering Tab 3: Stability Summary
+2026-01-09 10:52:56,721 - INFO - Database connection closed.
+2026-01-09 10:55:09,305 - INFO - --- app.py script started ---
+2026-01-09 10:55:09,305 - INFO - --- Script is being run directly ---
+2026-01-09 10:55:09,305 - INFO - --- main() function started ---
+2026-01-09 10:55:09,306 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:55:09,306 - INFO - Database connection successful.
+2026-01-09 10:55:09,306 - INFO - Attempting to create tables.
+2026-01-09 10:55:09,307 - INFO - Tables created successfully.
+2026-01-09 10:55:09,307 - INFO - Database connection and table creation complete.
+2026-01-09 10:55:09,307 - INFO - Defining tabs.
+2026-01-09 10:55:09,308 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:55:09,318 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:55:09,321 - INFO - Entering Tab 3: Stability Summary
+2026-01-09 10:55:09,324 - INFO - Database connection closed.
+2026-01-09 10:55:16,868 - INFO - --- app.py script started ---
+2026-01-09 10:55:16,868 - INFO - --- Script is being run directly ---
+2026-01-09 10:55:16,868 - INFO - --- main() function started ---
+2026-01-09 10:55:16,869 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:55:16,869 - INFO - Database connection successful.
+2026-01-09 10:55:16,869 - INFO - Attempting to create tables.
+2026-01-09 10:55:16,870 - INFO - Tables created successfully.
+2026-01-09 10:55:16,870 - INFO - Database connection and table creation complete.
+2026-01-09 10:55:16,870 - INFO - Defining tabs.
+2026-01-09 10:55:16,871 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:55:16,880 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:55:16,882 - INFO - Entering Tab 3: Stability Summary
+2026-01-09 10:55:16,885 - INFO - Database connection closed.
+2026-01-09 10:55:17,750 - INFO - --- app.py script started ---
+2026-01-09 10:55:17,750 - INFO - --- Script is being run directly ---
+2026-01-09 10:55:17,750 - INFO - --- main() function started ---
+2026-01-09 10:55:17,751 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:55:17,751 - INFO - Database connection successful.
+2026-01-09 10:55:17,751 - INFO - Attempting to create tables.
+2026-01-09 10:55:17,752 - INFO - Tables created successfully.
+2026-01-09 10:55:17,752 - INFO - Database connection and table creation complete.
+2026-01-09 10:55:17,752 - INFO - Defining tabs.
+2026-01-09 10:55:17,753 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:55:17,762 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:55:17,803 - INFO - Entering Tab 3: Stability Summary
+2026-01-09 10:55:17,806 - INFO - Database connection closed.
+2026-01-09 10:55:30,920 - INFO - --- app.py script started ---
+2026-01-09 10:55:30,920 - INFO - --- Script is being run directly ---
+2026-01-09 10:55:30,920 - INFO - --- main() function started ---
+2026-01-09 10:55:30,921 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:55:30,921 - INFO - Database connection successful.
+2026-01-09 10:55:30,921 - INFO - Attempting to create tables.
+2026-01-09 10:55:30,922 - INFO - Tables created successfully.
+2026-01-09 10:55:30,922 - INFO - Database connection and table creation complete.
+2026-01-09 10:55:30,922 - INFO - Defining tabs.
+2026-01-09 10:55:30,923 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:55:30,932 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:55:31,069 - INFO - --- app.py script started ---
+2026-01-09 10:55:31,069 - INFO - --- Script is being run directly ---
+2026-01-09 10:55:31,069 - INFO - --- main() function started ---
+2026-01-09 10:55:31,069 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:55:31,070 - INFO - Database connection successful.
+2026-01-09 10:55:31,070 - INFO - Attempting to create tables.
+2026-01-09 10:55:31,070 - INFO - Tables created successfully.
+2026-01-09 10:55:31,070 - INFO - Database connection and table creation complete.
+2026-01-09 10:55:31,070 - INFO - Defining tabs.
+2026-01-09 10:55:31,071 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:55:31,078 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:55:31,094 - INFO - Entering Tab 3: Stability Summary
+2026-01-09 10:55:31,097 - INFO - Database connection closed.
+2026-01-09 10:55:33,416 - INFO - --- app.py script started ---
+2026-01-09 10:55:33,416 - INFO - --- Script is being run directly ---
+2026-01-09 10:55:33,416 - INFO - --- main() function started ---
+2026-01-09 10:55:33,416 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-09 10:55:33,417 - INFO - Database connection successful.
+2026-01-09 10:55:33,417 - INFO - Attempting to create tables.
+2026-01-09 10:55:33,417 - INFO - Tables created successfully.
+2026-01-09 10:55:33,418 - INFO - Database connection and table creation complete.
+2026-01-09 10:55:33,418 - INFO - Defining tabs.
+2026-01-09 10:55:33,419 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-09 10:55:33,429 - INFO - Entering Tab 2: Stability Schedule
+2026-01-09 10:55:33,444 - INFO - Entering Tab 3: Stability Summary
+2026-01-09 10:55:33,448 - INFO - Database connection closed.
