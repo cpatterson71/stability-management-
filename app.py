@@ -48,8 +48,7 @@ def main():
         st.session_state.docs_to_download = {}
 
     # --- Database Connection ---
-    database = os.path.join(script_dir, "stability_studies.db")
-    conn = create_connection(database)
+    conn = create_connection()
 
     if conn is not None:
         create_table(conn)

@@ -127,7 +127,7 @@ def show_setup_tab(conn):
                     cur = conn.cursor()
                     for index, row in processed_df.iterrows(): # Iterate over processed_df
                         # Using INSERT OR IGNORE to avoid duplicates on test_name
-                        cur.execute("INSERT OR IGNORE INTO master_tests (test_name, test_method, form_no) VALUES (?, ?, ?)",
+                        cur.execute("INSERT INTO master_tests (test_name, test_method, form_no) VALUES (%s, %s, %s) ON CONFLICT (test_name) DO NOTHING",
                                     (row['Test'], row['Test Method'], row['Form No']))
                     conn.commit()
                     
@@ -241,7 +241,7 @@ def show_setup_tab(conn):
                 master_tests_from_db_df = pd.read_sql_query("SELECT test_name FROM master_tests", conn)
                 master_test_list = master_tests_from_db_df['test_name'].tolist()
                 cur = conn.cursor()
-                cur.execute("SELECT id FROM stability_studies WHERE lot_number = ?", (lot_number_input,))
+                cur.execute("SELECT id FROM stability_studies WHERE lot_number = %s", (lot_number_input,))
                 existing_study = cur.fetchone()
 
                 if existing_study:
@@ -251,12 +251,12 @@ def show_setup_tab(conn):
                     dp_val = 1 if dp_checkbox else 0
                     ds_val = 1 if ds_checkbox else 0
                     sql_study_update = ''' UPDATE stability_studies SET
-                                            client_code = ?, description = ?, active_content = ?, drug_product = ?, drug_substance = ?, 
-                                            manufacturing_date = ?, t0_release_date = ?, packaging1_supplier_part_number = ?, 
-                                            packaging1_description = ?, packaging1_supplier = ?, packaging2_supplier_part_number = ?, 
-                                            packaging2_description = ?, packaging2_supplier = ?, product_no = ?, protocol_no = ?, 
-                                            revision = ?, specification_no = ?
-                                          WHERE id = ? '''
+                                            client_code = %s, description = %s, active_content = %s, drug_product = %s, drug_substance = %s, 
+                                            manufacturing_date = %s, t0_release_date = %s, packaging1_supplier_part_number = %s, 
+                                            packaging1_description = %s, packaging1_supplier = %s, packaging2_supplier_part_number = %s, 
+                                            packaging2_description = %s, packaging2_supplier = %s, product_no = %s, protocol_no = %s, 
+                                            revision = %s, specification_no = %s
+                                          WHERE id = %s '''
                     cur.execute(sql_study_update, (
                         client_code_input, desc_input, active_content_input, dp_val, ds_val,
                         mfg_date_input.strftime('%Y-%m-%d'), t0_release_date_input.strftime('%Y-%m-%d'),
@@ -264,8 +264,8 @@ def show_setup_tab(conn):
                         product_no_input, protocol_no_input, revision_input, spec_no_input, study_id
                     ))
 
-                    cur.execute("DELETE FROM timepoint_testing_info WHERE schedule_id IN (SELECT id FROM storage_schedules WHERE study_id = ?)", (study_id,))
-                    cur.execute("DELETE FROM storage_schedules WHERE study_id = ?", (study_id,))
+                    cur.execute("DELETE FROM timepoint_testing_info WHERE schedule_id IN (SELECT id FROM storage_schedules WHERE study_id = %s)", (study_id,))
+                    cur.execute("DELETE FROM storage_schedules WHERE study_id = %s", (study_id,))
                 else:
                     dp_val = 1 if dp_checkbox else 0
                     ds_val = 1 if ds_checkbox else 0
@@ -274,7 +274,7 @@ def show_setup_tab(conn):
                                                 packaging1_supplier_part_number, packaging1_description, packaging1_supplier,
                                                 packaging2_supplier_part_number, packaging2_description, packaging2_supplier,
                                                 product_no, protocol_no, revision, specification_no
-                                            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) '''
+                                            ) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) '''
                     cur.execute(sql_study_insert, (
                         client_code_input, desc_input, active_content_input, dp_val, ds_val, lot_number_input, 
                         mfg_date_input.strftime('%Y-%m-%d'), t0_release_date_input.strftime('%Y-%m-%d'),
@@ -283,8 +283,8 @@ def show_setup_tab(conn):
                     ))
                     study_id = cur.lastrowid
                 
-                sql_schedule = '''INSERT INTO storage_schedules(study_id, storage_condition) VALUES(?,?)'''
-                sql_timepoint_info = '''INSERT INTO timepoint_testing_info(schedule_id, timepoint, pull_date, num_vials, num_copies, tests_to_perform) VALUES(?,?,?,?,?,?)'''
+                sql_schedule = '''INSERT INTO storage_schedules(study_id, storage_condition) VALUES(%s,%s)'''
+                sql_timepoint_info = '''INSERT INTO timepoint_testing_info(schedule_id, timepoint, pull_date, num_vials, num_copies, tests_to_perform) VALUES(%s,%s,%s,%s,%s,%s)'''
                 
                 if 'completed_schedule' in st.session_state and st.session_state.completed_schedule:
                     for condition, timepoint_rows in st.session_state.completed_schedule.items():

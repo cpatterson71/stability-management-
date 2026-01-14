@@ -3,6 +3,8 @@ import sqlite3
 import pandas as pd
 import io
 import logging
+import os
+import psycopg2
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 import json
@@ -10,19 +12,23 @@ import docx
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-def create_connection(db_file):
-    """ create a database connection to the SQLite database
-        specified by db_file
-    :param db_file: database file
-    :return: Connection object or None
+def create_connection():
+    """ create a database connection to the PostgreSQL database
     """
-    logging.info(f"Attempting to create connection to {db_file}")
+    logging.info("Attempting to create connection to PostgreSQL database...")
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
+        # Connect to the PostgreSQL database using environment variables
+        conn = psycopg2.connect(
+            host=os.environ.get("DB_HOST"),
+            dbname=os.environ.get("DB_NAME"),
+            user=os.environ.get("DB_USER"),
+            password=os.environ.get("DB_PASS"),
+            port=os.environ.get("DB_PORT", 5432)
+        )
         logging.info("Database connection successful.")
-    except sqlite3.Error as e:
-        st.error(e)
+    except Exception as e:
+        st.error(f"Database connection error: Could not connect to PostgreSQL. Ensure environment variables are set correctly.")
         logging.error(f"Database connection error: {e}")
     return conn
 
@@ -34,6 +40,8 @@ def create_table(conn):
     try:
         c = conn.cursor()
 
+        # The SQL syntax for CREATE TABLE is largely compatible.
+        # PostgreSQL usesSERIAL for auto-incrementing primary keys, but INTEGER PRIMARY KEY is an alias for that.
         sql_create_stability_studies_table = """ CREATE TABLE IF NOT EXISTS stability_studies (
                                         id integer PRIMARY KEY,
                                         client_code text,
@@ -85,9 +93,11 @@ def create_table(conn):
         c.execute(sql_create_storage_schedules_table)
         c.execute(sql_create_timepoint_testing_info_table)
         c.execute(sql_create_master_tests_table)
+        conn.commit() # Make sure to commit the changes
+        c.close()
         logging.info("Tables created successfully.")
 
-    except sqlite3.Error as e:
+    except Exception as e:
         st.error(e)
         logging.error(f"Table creation error: {e}")
 

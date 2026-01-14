@@ -51,7 +51,7 @@ def show_schedule_tab(conn):
                         FROM timepoint_testing_info tti
                         JOIN storage_schedules sc ON tti.schedule_id = sc.id
                         JOIN stability_studies ss ON sc.study_id = ss.id
-                        WHERE tti.pull_date BETWEEN ? AND ?
+                        WHERE tti.pull_date BETWEEN %s AND %s
                         ORDER BY ss.client_code, ss.protocol_no, sc.storage_condition, tti.pull_date;
                     """
                     
