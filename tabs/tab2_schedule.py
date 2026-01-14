@@ -68,11 +68,10 @@ def show_schedule_tab(conn):
                         st.success(f"Found {len(st.session_state.schedule_df)} stability pulls for {len(st.session_state.schedule_df['Lot No.'].unique())} lot(s).")
                         
                         # 2. Always derive df_display directly from schedule_df
-                        df_display = st.session_state.schedule_df.copy()
-                        df_display['Tests to Perform'] = df_display['tests_to_perform'].apply(
+                        st.session_state.df_display = st.session_state.schedule_df.copy()
+                        st.session_state.df_display['Tests to Perform'] = st.session_state.df_display['tests_to_perform'].apply(
                             lambda x: ", ".join(json.loads(x)) if pd.notna(x) and x.strip() else ""
                         )
-                        st.session_state.df_display = df_display
 
         # This check is now robust because df_display is always initialized
         if not st.session_state.df_display.empty:
@@ -117,7 +116,7 @@ def show_schedule_tab(conn):
 
             if not display_and_gen_df.empty:
                 test_procedure_map = {}
-                if 'master_tests_df' in st.session_state and not st.session_state.master_tests_df.empty:
+                if 'master_tests_df' in st.session_state and not st.session_state.master_tests_df.empty and 'Test' in st.session_state.master_tests_df.columns:
                     test_procedure_map = st.session_state.master_tests_df.set_index('Test')[['Test Method', 'Form No']].to_dict('index')
 
                 grouped_by_study = display_and_gen_df.groupby(['Client Code', 'Protocol No.', 'Revision'])

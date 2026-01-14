@@ -10,7 +10,12 @@ def show_setup_tab(conn):
     logging.info("Entering Tab 1: Stability Study Setup")
     st.header("Stability Study Setup")
 
-    selected_master_tests = st.session_state.master_tests_df['Test'].tolist()
+    
+    if 'Test' in st.session_state.master_tests_df.columns:
+        selected_master_tests = st.session_state.master_tests_df['Test'].tolist()
+    else:
+        selected_master_tests = []
+    
     
     client_code_input = st.text_input("Client Code")
     desc_input = st.text_input("Description")
