@@ -14,13 +14,9 @@ load_dotenv()
 
 st.set_page_config(page_title="Stability Study Management", layout="wide")
 
-# Get the absolute path of the directory where the script is located
-script_dir = os.path.dirname(os.path.abspath(__file__))
-log_file_path = os.path.join(script_dir, 'app_log.txt')
-
-# Configure logging
-logging.basicConfig(filename=log_file_path, level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
+# Configure logging to output to the console
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 logging.info("--- app.py script started ---")
 
