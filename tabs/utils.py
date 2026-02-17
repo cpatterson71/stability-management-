@@ -18,13 +18,24 @@ def create_connection():
     logging.info("Attempting to create connection to PostgreSQL database...")
     conn = None
     try:
+        db_host = os.environ.get("DB_HOST")
+        db_name = os.environ.get("DB_NAME")
+        db_user = os.environ.get("DB_USER")
+        db_pass = os.environ.get("DB_PASS")
+        db_port = os.environ.get("DB_PORT", "5432") # Ensure port is a string for logging consistently
+
+        logging.info(f"DB_HOST: {db_host}")
+        logging.info(f"DB_NAME: {db_name}")
+        logging.info(f"DB_USER: {db_user}") # Be cautious with logging sensitive info in production
+        logging.info(f"DB_PORT: {db_port}")
+        
         # Connect to the PostgreSQL database using environment variables
         conn = psycopg2.connect(
-            host=os.environ.get("DB_HOST"),
-            dbname=os.environ.get("DB_NAME"),
-            user=os.environ.get("DB_USER"),
-            password=os.environ.get("DB_PASS"),
-            port=os.environ.get("DB_PORT", 5432)
+            host=db_host,
+            dbname=db_name,
+            user=db_user,
+            password=db_pass,
+            port=db_port
         )
         logging.info("Database connection successful.")
     except Exception as e:
