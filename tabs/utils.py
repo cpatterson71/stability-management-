@@ -40,10 +40,9 @@ def create_table(conn):
     try:
         c = conn.cursor()
 
-        # The SQL syntax for CREATE TABLE is largely compatible.
-        # PostgreSQL usesSERIAL for auto-incrementing primary keys, but INTEGER PRIMARY KEY is an alias for that.
+        # Corrected schema for PostgreSQL using SERIAL for auto-incrementing keys.
         sql_create_stability_studies_table = """ CREATE TABLE IF NOT EXISTS stability_studies (
-                                        id integer PRIMARY KEY,
+                                        id SERIAL PRIMARY KEY,
                                         client_code text,
                                         description text NOT NULL,
                                         active_content text,
@@ -65,40 +64,47 @@ def create_table(conn):
                                     ); """
         
         sql_create_storage_schedules_table = """CREATE TABLE IF NOT EXISTS storage_schedules (
-                                            id integer PRIMARY KEY,
+                                            id SERIAL PRIMARY KEY,
                                             study_id integer NOT NULL,
                                             storage_condition text NOT NULL,
-                                            FOREIGN KEY (study_id) REFERENCES stability_studies (id)
+                                            FOREIGN KEY (study_id) REFERENCES stability_studies (id) ON DELETE CASCADE
                                         );"""
 
         sql_create_timepoint_testing_info_table = """CREATE TABLE IF NOT EXISTS timepoint_testing_info (
-                                            id integer PRIMARY KEY,
+                                            id SERIAL PRIMARY KEY,
                                             schedule_id integer NOT NULL,
                                             timepoint text,
                                             pull_date text NOT NULL,
                                             num_vials integer,
                                             num_copies integer,
                                             tests_to_perform text,
-                                            FOREIGN KEY (schedule_id) REFERENCES storage_schedules (id)
+                                            FOREIGN KEY (schedule_id) REFERENCES storage_schedules (id) ON DELETE CASCADE
                                         );"""
 
         sql_create_master_tests_table = """CREATE TABLE IF NOT EXISTS master_tests (
-                                            id integer PRIMARY KEY,
+                                            id SERIAL PRIMARY KEY,
                                             test_name text NOT NULL UNIQUE,
                                             test_method text,
                                             form_no text
                                         );"""
+        
+        # Drop tables before creating them to ensure schema is always fresh in development
+        # c.execute("DROP TABLE IF EXISTS timepoint_testing_info;")
+        # c.execute("DROP TABLE IF EXISTS storage_schedules;")
+        # c.execute("DROP TABLE IF EXISTS stability_studies;")
+        # c.execute("DROP TABLE IF EXISTS master_tests;")
 
         c.execute(sql_create_stability_studies_table)
         c.execute(sql_create_storage_schedules_table)
         c.execute(sql_create_timepoint_testing_info_table)
         c.execute(sql_create_master_tests_table)
-        conn.commit() # Make sure to commit the changes
+        
+        conn.commit()
         c.close()
         logging.info("Tables created successfully.")
 
     except Exception as e:
-        st.error(e)
+        st.error(f"Table creation error: {e}")
         logging.error(f"Table creation error: {e}")
 
 def generate_schedule_dfs(selected_timepoints, selected_master_tests):

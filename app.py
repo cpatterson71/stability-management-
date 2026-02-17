@@ -57,7 +57,7 @@ def main():
         # Load master tests from the database on startup if not already loaded
         if st.session_state.master_tests_df.empty:
             try:
-                st.session_state.master_tests_df = pd.read_sql_query("SELECT test_name AS 'Test', test_method AS 'Test Method', form_no AS 'Form No' FROM master_tests", conn)
+                st.session_state.master_tests_df = pd.read_sql_query('SELECT test_name AS "Test", test_method AS "Test Method", form_no AS "Form No" FROM master_tests', conn)
                 logging.info("Master tests loaded from database into session state.")
             except Exception as e:
                 logging.error(f"Could not load master tests from database: {e}")

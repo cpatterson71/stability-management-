@@ -23,55 +23,63 @@ def show_schedule_tab(conn):
     if 'docs_to_download' not in st.session_state:
         st.session_state.docs_to_download = {}
 
-    if conn:
-        with st.expander("Query Schedule by Date Range", expanded=True):
-            start_date = st.date_input("Start Date", value=datetime.today() - relativedelta(years=1))
-            end_date = st.date_input("End Date", value=datetime.today() + relativedelta(years=1))
-            
-            if st.button("Query Schedule"):
-                if start_date and end_date:
-                    start_date_str = start_date.strftime('%Y-%m-%d')
-                    end_date_str = end_date.strftime('%Y-%m-%d')
-                    
-                    sql_query = """
-                        SELECT
-                            tti.id,
-                            ss.client_code AS 'Client Code',
-                            ss.description AS 'Description',
-                            ss.protocol_no AS 'Protocol No.',
-                            ss.revision AS 'Revision',
-                            ss.specification_no AS 'Specification No.',
-                            ss.lot_number AS 'Lot No.',
-                            sc.storage_condition AS 'Storage Condition',
-                            tti.timepoint AS 'Timepoint',
-                            tti.pull_date AS 'Pull Date',
-                            tti.num_vials AS 'Number of Vials',
-                            tti.num_copies AS 'Number of Copies',
-                            tti.tests_to_perform
-                        FROM timepoint_testing_info tti
-                        JOIN storage_schedules sc ON tti.schedule_id = sc.id
-                        JOIN stability_studies ss ON sc.study_id = ss.id
-                        WHERE tti.pull_date BETWEEN %s AND %s
-                        ORDER BY ss.client_code, ss.protocol_no, sc.storage_condition, tti.pull_date;
-                    """
-                    
-                    # 1. Consistently populate schedule_df from the database
-                    st.session_state.schedule_df = pd.read_sql_query(sql_query, conn, params=(start_date_str, end_date_str))
-                    
-                    # Reset dependent dataframes
-                    st.session_state.df_display = pd.DataFrame()
-                    st.session_state.filtered_schedule_df = pd.DataFrame()
+    # The "Active Study Schedule" view has been removed to simplify the interface.
 
-                    if st.session_state.schedule_df.empty:
-                        st.info("No stability pulls scheduled for the selected date range.")
-                    else:
-                        st.success(f"Found {len(st.session_state.schedule_df)} stability pulls for {len(st.session_state.schedule_df['Lot No.'].unique())} lot(s).")
-                        
-                        # 2. Always derive df_display directly from schedule_df
-                        st.session_state.df_display = st.session_state.schedule_df.copy()
-                        st.session_state.df_display['Tests to Perform'] = st.session_state.df_display['tests_to_perform'].apply(
-                            lambda x: ", ".join(json.loads(x)) if pd.notna(x) and x.strip() else ""
-                        )
+    if conn:
+        st.subheader("Filter Stability Testing Plan")
+        
+        # Date Range inputs
+        start_date = st.date_input("Start Date", value=datetime.today() - relativedelta(years=1))
+        end_date = st.date_input("End Date", value=datetime.today() + relativedelta(years=1))
+        
+        if st.button("Search by Date Range", key="filter_test_plan"):
+            if start_date and end_date:
+                start_date_str = start_date.strftime('%Y-%m-%d')
+                end_date_str = end_date.strftime('%Y-%m-%d')
+                st.info(f"DEBUG: Querying database for dates between: {start_date_str} and {end_date_str}")
+                
+                sql_query = """
+                    SELECT
+                        tti.id,
+                        ss.client_code AS "Client Code",
+                        ss.description AS "Description",
+                        ss.protocol_no AS "Protocol No.",
+                        ss.revision AS "Revision",
+                        ss.specification_no AS "Specification No.",
+                        ss.lot_number AS "Lot No.",
+                        sc.storage_condition AS "Storage Condition",
+                        tti.timepoint AS "Timepoint",
+                        tti.pull_date AS "Pull Date",
+                        tti.num_vials AS "Number of Vials",
+                        tti.num_copies AS "Number of Copies",
+                        tti.tests_to_perform
+                    FROM timepoint_testing_info tti
+                    JOIN storage_schedules sc ON tti.schedule_id = sc.id
+                    JOIN stability_studies ss ON sc.study_id = ss.id
+                    WHERE tti.pull_date BETWEEN %s AND %s
+                    ORDER BY ss.client_code, ss.protocol_no, sc.storage_condition, tti.pull_date;
+                """
+                
+                # 1. Consistently populate schedule_df from the database
+                st.session_state.schedule_df = pd.read_sql_query(sql_query, conn, params=(start_date_str, end_date_str))
+                
+                # Reset dependent dataframes
+                st.session_state.df_display = pd.DataFrame()
+                st.session_state.filtered_schedule_df = pd.DataFrame()
+
+                if st.session_state.schedule_df.empty:
+                    st.info("No stability pulls scheduled for the selected date range.")
+                else:
+                    st.success(f"Found {len(st.session_state.schedule_df)} stability pulls for {len(st.session_state.schedule_df['Lot No.'].unique())} lot(s).")
+                    
+                    # 2. Always derive df_display directly from schedule_df
+                    st.session_state.df_display = st.session_state.schedule_df.copy()
+                    st.session_state.df_display['Tests to Perform'] = st.session_state.df_display['tests_to_perform'].apply(
+                        lambda x: ", ".join(json.loads(x)) if pd.notna(x) and x.strip() else ""
+                    )
+
+            # The data is now filtered only by the date range query.
+            st.session_state.filtered_schedule_df = st.session_state.df_display.copy()
 
         # This check is now robust because df_display is always initialized
         if not st.session_state.df_display.empty:
@@ -89,25 +97,6 @@ def show_schedule_tab(conn):
             )
 
             st.markdown("---")
-
-            st.subheader("Filter Stability Testing Plan")
-            search_client_code = st.text_input("Client Code", key="search_client_code")
-            search_description = st.text_input("Description", key="search_description")
-            search_protocol_no = st.text_input("Protocol Number", key="search_protocol_no")
-            search_lot_no = st.text_input("Lot Number", key="search_lot_no")
-
-            if st.button("Search", key="filter_test_plan"):
-                # 3. Filtering logic acts on df_display and stores in filtered_schedule_df
-                filtered_df = st.session_state.df_display.copy()
-                if search_client_code:
-                    filtered_df = filtered_df[filtered_df['Client Code'].str.contains(search_client_code, case=False, na=False)]
-                if search_description:
-                    filtered_df = filtered_df[filtered_df['Description'].str.contains(search_description, case=False, na=False)]
-                if search_protocol_no:
-                    filtered_df = filtered_df[filtered_df['Protocol No.'].str.contains(search_protocol_no, case=False, na=False)]
-                if search_lot_no:
-                    filtered_df = filtered_df[filtered_df['Lot No.'].str.contains(search_lot_no, case=False, na=False)]
-                st.session_state.filtered_schedule_df = filtered_df
             
             st.subheader("Stability Testing Plan")
             

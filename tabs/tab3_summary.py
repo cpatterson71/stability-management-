@@ -46,24 +46,29 @@ def show_summary_tab():
         with st.expander("Search for Stability Summary in S3", expanded=True):
             ss_client_code = st.text_input("Client Code", key="ss_client_code")
             ss_description = st.text_input("Description", key="ss_description")
-            ss_protocol_no = st.text_input("Protocol Number", key="ss_protocol_no")
-            ss_lot_number = st.text_input("Lot Number", key="ss_lot_number")
 
             if st.button("Search", key="ss_search"):
-                st.session_state.ss_search_results = pd.DataFrame() # Clear old DB results
+                st.session_state.ss_search_results = [] # Clear old results
                 try:
                     s3_client = boto3.client('s3')
-                    prefix_parts = []
-                    if ss_client_code: prefix_parts.append(ss_client_code)
-                    if ss_description: prefix_parts.append("".join(x for x in ss_description if x.isalnum()))
-                    if ss_protocol_no: prefix_parts.append(ss_protocol_no)
-                    if ss_lot_number: prefix_parts.append(ss_lot_number)
-                    s3_search_prefix = S3_FOLDER_PREFIX + "_".join(prefix_parts)
                     
-                    response = s3_client.list_objects_v2(Bucket=S3_BUCKET_NAME, Prefix=s3_search_prefix)
-                    st.session_state.s3_search_results = [obj['Key'] for obj in response.get('Contents', [])]
+                    # List all objects in the folder
+                    all_objects = []
+                    paginator = s3_client.get_paginator('list_objects_v2')
+                    pages = paginator.paginate(Bucket=S3_BUCKET_NAME, Prefix=S3_FOLDER_PREFIX)
+                    for page in pages:
+                        all_objects.extend([obj['Key'] for obj in page.get('Contents', [])])
+
+                    # Filter based on user input
+                    filtered_objects = all_objects
+                    if ss_client_code:
+                        filtered_objects = [key for key in filtered_objects if ss_client_code.lower() in key.lower()]
+                    if ss_description:
+                        filtered_objects = [key for key in filtered_objects if ss_description.lower() in key.lower()]
+                    
+                    st.session_state.s3_search_results = filtered_objects
                     if not st.session_state.s3_search_results:
-                        st.info("No matching files found in S3.")
+                        st.info("No matching files found in S3 for the given criteria.")
                 except Exception as e:
                     st.error(f"Error searching S3: {e}")
                     st.session_state.s3_search_results = []

@@ -137,7 +137,7 @@ def show_setup_tab(conn):
                     conn.commit()
                     
                     # Reload from DB to ensure session state is up-to-date
-                    st.session_state.master_tests_df = pd.read_sql_query("SELECT test_name AS 'Test', test_method AS 'Test Method', form_no AS 'Form No' FROM master_tests", conn)
+                    st.session_state.master_tests_df = pd.read_sql_query('SELECT test_name AS "Test", test_method AS "Test Method", form_no AS "Form No" FROM master_tests', conn)
 
                     st.write("**Master Test Methods (loaded from database):**")
                     st.dataframe(st.session_state.master_tests_df, hide_index=True)
@@ -147,7 +147,7 @@ def show_setup_tab(conn):
                 st.error(f"Error reading Excel file or saving to DB: {e}")
                 # Attempt to load from DB anyway, in case it was a DB error but data exists
                 try:
-                    st.session_state.master_tests_df = pd.read_sql_query("SELECT test_name AS 'Test', test_method AS 'Test Method', form_no AS 'Form No' FROM master_tests", conn)
+                    st.session_state.master_tests_df = pd.read_sql_query('SELECT test_name AS "Test", test_method AS "Test Method", form_no AS "Form No" FROM master_tests', conn)
                 except Exception as db_e:
                     st.error(f"Could not load master tests from database: {db_e}")
                     st.session_state.master_tests_df = pd.DataFrame()
@@ -236,6 +236,32 @@ def show_setup_tab(conn):
                 st.session_state.completed_schedule = schedule_data
                 st.success("Completed schedule uploaded and parsed successfully!")
 
+                # --- Create DataFrame for immediate display in Tab 2 ---
+                active_study_records = []
+                for condition, timepoints in schedule_data.items():
+                    for tp_data in timepoints:
+                        pull_date_val = pd.to_datetime(tp_data.get('Date Scheduled'), errors='coerce')
+                        record = {
+                            "Client Code": client_code_input,
+                            "Description": desc_input,
+                            "Protocol No.": protocol_no_input,
+                            "Revision": revision_input,
+                            "Specification No.": spec_no_input,
+                            "Lot No.": lot_number_input,
+                            "Storage Condition": condition,
+                            "Timepoint": tp_data['Time Point'],
+                            "Pull Date": pull_date_val.strftime('%Y-%m-%d') if pd.notna(pull_date_val) else None,
+                            "Number of Vials": tp_data['Number of Vials'],
+                            "Number of Copies": 1,  # Defaulting to 1
+                            "tests_to_perform": json.dumps(tp_data.get('tests_to_perform', []))
+                        }
+                        active_study_records.append(record)
+                
+                if active_study_records:
+                    st.session_state.active_study_df = pd.DataFrame(active_study_records)
+                else:
+                    st.session_state.active_study_df = pd.DataFrame()
+
             except Exception as e:
                 st.error(f"Error reading completed schedule file: {e}")
                 logging.error(f"Error parsing completed schedule: {e}", exc_info=True)
@@ -279,22 +305,22 @@ def show_setup_tab(conn):
                                                 packaging1_supplier_part_number, packaging1_description, packaging1_supplier,
                                                 packaging2_supplier_part_number, packaging2_description, packaging2_supplier,
                                                 product_no, protocol_no, revision, specification_no
-                                            ) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) '''
+                                            ) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'''
                     cur.execute(sql_study_insert, (
                         client_code_input, desc_input, active_content_input, dp_val, ds_val, lot_number_input, 
                         mfg_date_input.strftime('%Y-%m-%d'), t0_release_date_input.strftime('%Y-%m-%d'),
                         p1_spn_input, p1_desc_input, p1_supp_input, p2_spn_input, p2_desc_input, p2_supp_input,
                         product_no_input, protocol_no_input, revision_input, spec_no_input
                     ))
-                    study_id = cur.lastrowid
+                    study_id = cur.fetchone()[0]
                 
-                sql_schedule = '''INSERT INTO storage_schedules(study_id, storage_condition) VALUES(%s,%s)'''
+                sql_schedule = '''INSERT INTO storage_schedules(study_id, storage_condition) VALUES(%s,%s) RETURNING id'''
                 sql_timepoint_info = '''INSERT INTO timepoint_testing_info(schedule_id, timepoint, pull_date, num_vials, num_copies, tests_to_perform) VALUES(%s,%s,%s,%s,%s,%s)'''
                 
                 if 'completed_schedule' in st.session_state and st.session_state.completed_schedule:
                     for condition, timepoint_rows in st.session_state.completed_schedule.items():
                         cur.execute(sql_schedule, (study_id, condition))
-                        schedule_id = cur.lastrowid
+                        schedule_id = cur.fetchone()[0]
                         
                         for row in timepoint_rows:
                             if pd.notna(row.get('Date Scheduled')):
@@ -327,10 +353,8 @@ def show_setup_tab(conn):
                 st.session_state['mfg_date'] = datetime.today().date()
                 st.session_state['t0_release_date'] = datetime.today().date()
                 # For packaging, reset the data editor default or session state if it exists
-                st.session_state['packaging_editor'] = pd.DataFrame([
-                    {"Supplier Part Number": "", "Description": "", "Supplier": ""},
-                    {"Supplier Part Number": "", "Description": "", "Supplier": ""}
-                ])
+                if 'packaging_editor' in st.session_state:
+                    del st.session_state['packaging_editor']
                 st.session_state.completed_schedule = None
                 st.rerun()
 
