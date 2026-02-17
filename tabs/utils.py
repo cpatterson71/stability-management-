@@ -35,7 +35,9 @@ def create_connection():
             dbname=db_name,
             user=db_user,
             password=db_pass,
-            port=db_port
+            port=db_port,
+            sslmode='verify-full',
+            sslrootcert='global-bundle.pem' 
         )
         logging.info("Database connection successful.")
     except Exception as e:
