@@ -15,8 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # When the container launches, run app.py with streamlit.
-# - server.port $PORT: Use the port provided by the App Runner environment variable.
-# - server.address 0.0.0.0: Listen on all network interfaces, making it accessible from outside the container.
-# - server.headless true: Run in headless mode, appropriate for a server.
-# - server.enableCORS false / server.enableXsrfProtection false: Recommended settings when running behind a proxy like App Runner.
-CMD ["streamlit", "run", "app.py", "--server.port", "$PORT", "--server.address", "0.0.0.0", "--server.headless", "true", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
+# This "shell form" of CMD allows the $PORT environment variable to be correctly interpreted.
+CMD streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS=false --server.enableXsrfProtection=false
