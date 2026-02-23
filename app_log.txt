@@ -1,0 +1,14 @@
+2026-01-13 15:38:39,258 - INFO - --- app.py script started ---
+2026-01-13 15:38:39,258 - INFO - --- Script is being run directly ---
+2026-01-13 15:38:39,258 - INFO - --- main() function started ---
+2026-01-13 15:38:39,495 - INFO - Attempting to create connection to C:\Users\carlp\OneDrive\Desktop\AI_Projects\AI_Stability_Application\stability_studies.db
+2026-01-13 15:38:39,498 - INFO - Database connection successful.
+2026-01-13 15:38:39,498 - INFO - Attempting to create tables.
+2026-01-13 15:38:39,502 - INFO - Tables created successfully.
+2026-01-13 15:38:39,502 - INFO - Database connection and table creation complete.
+2026-01-13 15:38:39,505 - INFO - Master tests loaded from database into session state.
+2026-01-13 15:38:39,506 - INFO - Defining tabs.
+2026-01-13 15:38:39,507 - INFO - Entering Tab 1: Stability Study Setup
+2026-01-13 15:38:39,532 - INFO - Entering Tab 2: Stability Schedule
+2026-01-13 15:38:39,534 - INFO - Entering Tab 3: Stability Summary
+2026-01-13 15:38:39,538 - INFO - Database connection closed.
