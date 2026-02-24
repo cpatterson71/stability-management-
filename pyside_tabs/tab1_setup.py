@@ -21,6 +21,7 @@ from PySide6.QtCore import QDate, Qt, QAbstractTableModel
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
+from tabs.utils import generate_schedule_dfs, generate_excel_from_dfs
 
 class PandasModel(QAbstractTableModel):
     """A model to interface a pandas DataFrame with QTableView."""
@@ -160,9 +161,76 @@ class Tab1Setup(QWidget):
         self.layout().addLayout(action_button_layout)
 
     def generate_excel(self):
-        QMessageBox.information(self, "Not Implemented", "Generating Excel schedule is not yet implemented.")
-        # Logic to gather data from UI and call generate_excel_from_dfs will go here.
-        pass
+        # 1. Gather data from the UI
+        selected_timepoints = {}
+        for condition, tab in self.condition_tabs.items():
+            condition_timepoints = {}
+            # Find the scroll area content widget
+            scroll_area = tab.findChild(QScrollArea)
+            if not scroll_area:
+                continue
+            scroll_content = scroll_area.widget()
+            # Iterate through the layouts to find the timepoint rows
+            for i in range(1, scroll_content.layout().count()): # Start from 1 to skip header
+                row_layout = scroll_content.layout().itemAt(i).layout()
+                if not row_layout:
+                    continue
+                
+                tp_checkbox = row_layout.itemAt(0).widget()
+                if tp_checkbox and tp_checkbox.isChecked():
+                    pull_date_edit = row_layout.itemAt(1).widget()
+                    num_vials_spinbox = row_layout.itemAt(2).widget()
+                    
+                    timepoint_name = tp_checkbox.text()
+                    # A dummy 'months' value is needed for generate_schedule_dfs, it's not used in the excel generation itself.
+                    condition_timepoints[timepoint_name] = {
+                        "months": 0, 
+                        "pull_date": pull_date_edit.date().toPython(),
+                        "num_vials": num_vials_spinbox.value()
+                    }
+            if condition_timepoints:
+                selected_timepoints[condition] = condition_timepoints
+
+        if not selected_timepoints:
+            QMessageBox.warning(self, "No Selection", "Please select at least one storage condition and timepoint.")
+            return
+
+        study_details = {
+            "Description": self.desc_input.text(),
+            "Active Content": self.active_content_input.text(),
+            "Lot Number": self.lot_number_input.text(),
+            "Product No.": self.product_no_input.text(),
+            "Protocol No.": self.protocol_no_input.text(),
+            "Revision": self.revision_input.text(),
+            "Specification No.": self.spec_no_input.text(),
+            "Manufacturing Date": self.mfg_date_input.date().toString("yyyy-MM-dd"),
+            "T0 (release date)": self.t0_release_date_input.date().toString("yyyy-MM-dd"),
+            "master_tests_df": self.master_tests_model._data if self.master_tests_model else pd.DataFrame()
+        }
+        
+        selected_master_tests = []
+        if self.master_tests_model and not self.master_tests_model._data.empty:
+            selected_master_tests = self.master_tests_model._data['Test'].tolist()
+
+        # 2. Call utility functions
+        try:
+            schedule_dfs = generate_schedule_dfs(selected_timepoints, selected_master_tests)
+            excel_data = generate_excel_from_dfs(schedule_dfs, study_details)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred during Excel generation: {e}")
+            return
+
+        # 3. Open Save File Dialog
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Schedule Template", "stability_schedule_template.xlsx", "Excel Files (*.xlsx)")
+
+        if file_path:
+            try:
+                with open(file_path, "wb") as f:
+                    f.write(excel_data)
+                QMessageBox.information(self, "Success", f"Schedule template saved to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
+
 
     def upload_schedule(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Completed Schedule File", "", "Excel Files (*.xlsx)")
