@@ -12,7 +12,8 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QHBoxLayout,
     QTabWidget,
-    QScrollArea
+    QScrollArea,
+    QSpinBox
 )
 from PySide6.QtCore import QDate, Qt, QAbstractTableModel
 from dateutil.relativedelta import relativedelta
@@ -161,25 +162,51 @@ class Tab1Setup(QWidget):
 
         if state == Qt.CheckState.Checked.value:
             if condition_name not in self.condition_tabs:
-                # Create a new tab for this condition
                 tab = QWidget()
                 tab_layout = QVBoxLayout(tab)
                 
-                # Add a scroll area for the timepoints
                 scroll_area = QScrollArea()
                 scroll_area.setWidgetResizable(True)
                 scroll_content = QWidget()
-                scroll_layout = QFormLayout(scroll_content)
-                
+                scroll_layout = QVBoxLayout(scroll_content)
+
+                # Header Row
+                header_layout = QHBoxLayout()
+                header_layout.addWidget(QLabel("Timepoint"), 2)
+                header_layout.addWidget(QLabel("Pull Date"), 2)
+                header_layout.addWidget(QLabel("Number of Vials"), 1)
+                scroll_layout.addLayout(header_layout)
+
                 timepoints_dict = {
                     "1 month": 1, "2 months": 2, "3 months": 3, "6 months": 6,
                     "12 months": 12, "18 months": 18, "24 months": 24, "36 months": 36
                 }
+                
+                t0_date = self.t0_release_date_input.date()
 
                 for timepoint, months in timepoints_dict.items():
+                    row_layout = QHBoxLayout()
+                    
                     tp_checkbox = QCheckBox(timepoint)
-                    # You can connect signals here to handle logic when a timepoint is selected
-                    scroll_layout.addRow(tp_checkbox)
+                    pull_date_edit = QDateEdit(t0_date.addMonths(months))
+                    pull_date_edit.setCalendarPopup(True)
+                    num_vials_spinbox = QSpinBox()
+                    num_vials_spinbox.setMinimum(1)
+                    num_vials_spinbox.setValue(1)
+
+                    # Initially disable date/spinbox until checkbox is checked
+                    pull_date_edit.setEnabled(False)
+                    num_vials_spinbox.setEnabled(False)
+                    
+                    # Connect checkbox to enable/disable the other widgets
+                    tp_checkbox.toggled.connect(pull_date_edit.setEnabled)
+                    tp_checkbox.toggled.connect(num_vials_spinbox.setEnabled)
+
+                    row_layout.addWidget(tp_checkbox, 2)
+                    row_layout.addWidget(pull_date_edit, 2)
+                    row_layout.addWidget(num_vials_spinbox, 1)
+                    
+                    scroll_layout.addLayout(row_layout)
 
                 scroll_area.setWidget(scroll_content)
                 tab_layout.addWidget(scroll_area)
@@ -194,5 +221,4 @@ class Tab1Setup(QWidget):
                 if index != -1:
                     self.condition_tab_widget.removeTab(index)
                 del self.condition_tabs[condition_name]
-
 
