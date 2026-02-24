@@ -301,9 +301,118 @@ class Tab1Setup(QWidget):
 
 
     def save_study(self):
-        QMessageBox.information(self, "Not Implemented", "Saving the study to the database is not yet implemented.")
-        # Logic to gather all data from the UI and save to the database will go here.
-        pass
+        if not hasattr(self, 'completed_schedule') or not self.completed_schedule:
+            QMessageBox.warning(self, "Warning", "Please upload a completed schedule file before saving.")
+            return
+
+        try:
+            cur = self.conn.cursor()
+            lot_number = self.lot_number_input.text()
+
+            # Check if study exists
+            cur.execute("SELECT id FROM stability_studies WHERE lot_number = ?", (lot_number,))
+            existing_study = cur.fetchone()
+
+            # Gather data from UI
+            client_code = self.client_code_input.text()
+            description = self.desc_input.text()
+            active_content = self.active_content_input.text()
+            dp_val = 1 if self.dp_checkbox.isChecked() else 0
+            ds_val = 1 if self.ds_checkbox.isChecked() else 0
+            mfg_date = self.mfg_date_input.date().toString("yyyy-MM-dd")
+            t0_date = self.t0_release_date_input.date().toString("yyyy-MM-dd")
+            product_no = self.product_no_input.text()
+            protocol_no = self.protocol_no_input.text()
+            revision = self.revision_input.text()
+            spec_no = self.spec_no_input.text()
+            
+            p_df = self.packaging_model._data
+            p1_spn = p_df.iloc[0]["Supplier Part Number"] if len(p_df) > 0 else ""
+            p1_desc = p_df.iloc[0]["Description"] if len(p_df) > 0 else ""
+            p1_supp = p_df.iloc[0]["Supplier"] if len(p_df) > 0 else ""
+            p2_spn = p_df.iloc[1]["Supplier Part Number"] if len(p_df) > 1 else ""
+            p2_desc = p_df.iloc[1]["Description"] if len(p_df) > 1 else ""
+            p2_supp = p_df.iloc[1]["Supplier"] if len(p_df) > 1 else ""
+
+            if existing_study:
+                study_id = existing_study[0]
+                if QMessageBox.question(self, "Confirm Overwrite", 
+                                        f"Lot Number {lot_number} already exists. Overwrite its data?",
+                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.No:
+                    return
+
+                sql_study_update = ''' UPDATE stability_studies SET
+                                        client_code = ?, description = ?, active_content = ?, drug_product = ?, drug_substance = ?, 
+                                        manufacturing_date = ?, t0_release_date = ?, packaging1_supplier_part_number = ?, 
+                                        packaging1_description = ?, packaging1_supplier = ?, packaging2_supplier_part_number = ?, 
+                                        packaging2_description = ?, packaging2_supplier = ?, product_no = ?, protocol_no = ?, 
+                                        revision = ?, specification_no = ?
+                                      WHERE id = ? '''
+                cur.execute(sql_study_update, (
+                    client_code, description, active_content, dp_val, ds_val, mfg_date, t0_date,
+                    p1_spn, p1_desc, p1_supp, p2_spn, p2_desc, p2_supp,
+                    product_no, protocol_no, revision, spec_no, study_id
+                ))
+                # Delete old data
+                cur.execute("DELETE FROM timepoint_testing_info WHERE schedule_id IN (SELECT id FROM storage_schedules WHERE study_id = ?)", (study_id,))
+                cur.execute("DELETE FROM storage_schedules WHERE study_id = ?", (study_id,))
+            else:
+                sql_study_insert = ''' INSERT INTO stability_studies(
+                                            client_code, description, active_content, drug_product, drug_substance, lot_number, manufacturing_date, t0_release_date,
+                                            packaging1_supplier_part_number, packaging1_description, packaging1_supplier,
+                                            packaging2_supplier_part_number, packaging2_description, packaging2_supplier,
+                                            product_no, protocol_no, revision, specification_no
+                                        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''
+                cur.execute(sql_study_insert, (
+                    client_code, description, active_content, dp_val, ds_val, lot_number, mfg_date, t0_date,
+                    p1_spn, p1_desc, p1_supp, p2_spn, p2_desc, p2_supp,
+                    product_no, protocol_no, revision, spec_no
+                ))
+                study_id = cur.lastrowid
+
+            # Insert new schedule data
+            for condition, timepoint_rows in self.completed_schedule.items():
+                cur.execute("INSERT INTO storage_schedules(study_id, storage_condition) VALUES(?,?)", (study_id, condition))
+                schedule_id = cur.lastrowid
+                
+                for row in timepoint_rows:
+                    if pd.notna(row.get('Date Scheduled')):
+                        tests_str = json.dumps(row.get('tests_to_perform', []))
+                        pull_date = pd.to_datetime(row['Date Scheduled']).strftime('%Y-%m-%d')
+                        cur.execute("INSERT INTO timepoint_testing_info(schedule_id, timepoint, pull_date, num_vials, num_copies, tests_to_perform) VALUES(?,?,?,?,?,?)",
+                                    (schedule_id, row['Time Point'], pull_date, row['Number of Vials'], 1, tests_str))
+
+            self.conn.commit()
+            QMessageBox.information(self, "Success", "Stability study and detailed schedule saved successfully!")
+            self.clear_form()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Database Error", f"An error occurred while saving: {e}")
+
+    def clear_form(self):
+        # Reset all input fields
+        self.client_code_input.clear()
+        self.desc_input.clear()
+        self.active_content_input.clear()
+        self.dp_checkbox.setChecked(False)
+        self.ds_checkbox.setChecked(False)
+        self.lot_number_input.clear()
+        self.product_no_input.clear()
+        self.protocol_no_input.clear()
+        self.revision_input.clear()
+        self.spec_no_input.clear()
+        self.mfg_date_input.setDate(QDate.currentDate())
+        self.t0_release_date_input.setDate(QDate.currentDate())
+        
+        # Reset packaging editor
+        self.setup_packaging_editor() # Re-creates the model with empty data
+
+        # Uncheck and remove condition tabs
+        for checkbox in self.condition_checkboxes.values():
+            checkbox.setChecked(False) 
+        
+        self.completed_schedule = None
+
 
 
     def setup_master_tests(self):
