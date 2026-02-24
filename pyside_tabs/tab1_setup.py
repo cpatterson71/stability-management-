@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QDate, Qt, QAbstractTableModel
 from dateutil.relativedelta import relativedelta
 import pandas as pd
+import os
 
 class PandasModel(QAbstractTableModel):
     """A model to interface a pandas DataFrame with QTableView."""
@@ -136,8 +137,45 @@ class Tab1Setup(QWidget):
         # --- Packaging Editor ---
         self.setup_packaging_editor()
 
-        # --- Storage Conditions & Timepoints ---
         self.setup_storage_conditions()
+
+        # --- Action Buttons ---
+        self.setup_action_buttons()
+
+    def setup_action_buttons(self):
+        action_button_layout = QHBoxLayout()
+
+        self.generate_excel_button = QPushButton("Generate Schedule Template")
+        self.generate_excel_button.clicked.connect(self.generate_excel)
+        action_button_layout.addWidget(self.generate_excel_button)
+
+        self.upload_schedule_button = QPushButton("Upload Completed Schedule")
+        self.upload_schedule_button.clicked.connect(self.upload_schedule)
+        action_button_layout.addWidget(self.upload_schedule_button)
+
+        self.save_study_button = QPushButton("Save Study")
+        self.save_study_button.clicked.connect(self.save_study)
+        action_button_layout.addWidget(self.save_study_button)
+
+        self.layout().addLayout(action_button_layout)
+
+    def generate_excel(self):
+        QMessageBox.information(self, "Not Implemented", "Generating Excel schedule is not yet implemented.")
+        # Logic to gather data from UI and call generate_excel_from_dfs will go here.
+        pass
+
+    def upload_schedule(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open Completed Schedule File", "", "Excel Files (*.xlsx)")
+        if file_path:
+            QMessageBox.information(self, "Not Implemented", f"Parsing for '{os.path.basename(file_path)}' is not yet implemented.")
+            # Logic to parse the completed schedule will go here.
+            pass
+
+    def save_study(self):
+        QMessageBox.information(self, "Not Implemented", "Saving the study to the database is not yet implemented.")
+        # Logic to gather all data from the UI and save to the database will go here.
+        pass
+
 
     def setup_master_tests(self):
         master_tests_groupbox = QGroupBox("Step 1: Define Master Tests")
