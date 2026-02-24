@@ -3,6 +3,10 @@ import pandas as pd
 import os
 import logging
 from dotenv import load_dotenv
+import sys
+
+# Add the project root to the Python path to ensure modules are found
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from tabs.utils import create_connection, create_table
 from tabs.tab1_setup import show_setup_tab
