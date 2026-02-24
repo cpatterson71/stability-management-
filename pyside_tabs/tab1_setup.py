@@ -21,7 +21,8 @@ from PySide6.QtCore import QDate, Qt, QAbstractTableModel
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
-from tabs.utils import generate_schedule_dfs, generate_excel_from_dfs
+from tabs.utils import generate_schedule_dfs, generate_excel_from_dfs, sanitize_sheet_name
+import json
 
 class PandasModel(QAbstractTableModel):
     """A model to interface a pandas DataFrame with QTableView."""
@@ -234,10 +235,70 @@ class Tab1Setup(QWidget):
 
     def upload_schedule(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Completed Schedule File", "", "Excel Files (*.xlsx)")
-        if file_path:
-            QMessageBox.information(self, "Not Implemented", f"Parsing for '{os.path.basename(file_path)}' is not yet implemented.")
-            # Logic to parse the completed schedule will go here.
-            pass
+        if not file_path:
+            return
+
+        try:
+            xls = pd.ExcelFile(file_path)
+            schedule_data = {}
+            
+            if not self.master_tests_model or self.master_tests_model._data.empty:
+                QMessageBox.warning(self, "Master Tests Missing", "Please define master tests before uploading a schedule.")
+                return
+
+            ordered_test_list = self.master_tests_model._data['Test'].tolist()
+            
+            selected_conditions = [cb.text() for cb in self.condition_checkboxes.values() if cb.isChecked()]
+
+            for sheet_name in xls.sheet_names:
+                df_sheet = pd.read_excel(xls, sheet_name=sheet_name, header=None)
+                
+                header_row_index = -1
+                for i, row in df_sheet.iterrows():
+                    if str(row.iloc[0]).strip() == "Time Point":
+                        header_row_index = i
+                        break
+                
+                if header_row_index != -1:
+                    data_df = df_sheet.iloc[header_row_index + 1:].copy()
+                    data_df.columns = ["Time Point", "Number of Vials", "Date Scheduled"] + data_df.columns[3:].tolist()
+
+                    original_condition = None
+                    for cond in selected_conditions:
+                        sanitized_cond = sanitize_sheet_name(cond)
+                        if sheet_name.endswith(sanitized_cond):
+                            original_condition = cond
+                            break 
+                    
+                    if original_condition:
+                        records = []
+                        for index, row in data_df.iterrows():
+                            record = {
+                                "Time Point": row["Time Point"],
+                                "Number of Vials": row["Number of Vials"],
+                                "Date Scheduled": row["Date Scheduled"],
+                            }
+                            tests_for_this_row = []
+                            for i in range(3, len(row)):
+                                if str(row.iloc[i]).strip():
+                                    test_index = i - 3
+                                    if test_index < len(ordered_test_list):
+                                        tests_for_this_row.append(ordered_test_list[test_index])
+                            record['tests_to_perform'] = tests_for_this_row
+                            records.append(record)
+                        schedule_data[original_condition] = records
+                    else:
+                        QMessageBox.warning(self, "Sheet Mismatch", f"Could not map sheet '{sheet_name}' to any selected condition. Skipping sheet.")
+                else:
+                    QMessageBox.warning(self, "Header Not Found", f"Could not find header row with 'Time Point' in sheet '{sheet_name}'. Skipping sheet.")
+            
+            self.completed_schedule = schedule_data
+            QMessageBox.information(self, "Success", "Completed schedule uploaded and parsed successfully!")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error reading completed schedule file: {e}")
+            self.completed_schedule = None
+
 
     def save_study(self):
         QMessageBox.information(self, "Not Implemented", "Saving the study to the database is not yet implemented.")
