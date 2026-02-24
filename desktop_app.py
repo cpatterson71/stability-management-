@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from tabs.utils import create_connection, create_table
 from pyside_tabs.tab1_setup import Tab1Setup
 from pyside_tabs.tab2_schedule import Tab2Schedule
+from pyside_tabs.tab3_summary import Tab3Summary
 
 class MainWindow(QMainWindow):
     def __init__(self, conn):
@@ -31,8 +32,8 @@ class MainWindow(QMainWindow):
         tab2 = Tab2Schedule(self.conn)
         self.tab_widget.addTab(tab2, "Stability Schedule")
 
-        # Placeholder for other tabs
-        tab3 = QWidget()
+        # Integrate the new Tab3Summary widget
+        tab3 = Tab3Summary(self.conn)
         self.tab_widget.addTab(tab3, "Stability Summary")
 
     def closeEvent(self, event):
