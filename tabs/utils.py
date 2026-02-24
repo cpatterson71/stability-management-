@@ -4,7 +4,6 @@ import pandas as pd
 import io
 import logging
 import os
-import psycopg2
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 import json
@@ -13,22 +12,17 @@ from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 def create_connection():
-    """ create a database connection to the PostgreSQL database
+    """ create a database connection to the SQLite database
     """
-    logging.info("Attempting to create connection to PostgreSQL database...")
+    logging.info("Attempting to create connection to SQLite database...")
     conn = None
     try:
-        # Connect to the PostgreSQL database using environment variables
-        conn = psycopg2.connect(
-            host=os.environ.get("DB_HOST"),
-            dbname=os.environ.get("DB_NAME"),
-            user=os.environ.get("DB_USER"),
-            password=os.environ.get("DB_PASS"),
-            port=os.environ.get("DB_PORT", 5432)
-        )
-        logging.info("Database connection successful.")
+        # The database file is expected to be in the root of the app directory
+        db_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'stability_studies.db')
+        conn = sqlite3.connect(db_file, check_same_thread=False)
+        logging.info(f"SQLite database connection successful to {db_file}.")
     except Exception as e:
-        st.error(f"Database connection error: Could not connect to PostgreSQL. Ensure environment variables are set correctly.")
+        st.error(f"Database connection error: Could not connect to SQLite.")
         logging.error(f"Database connection error: {e}")
     return conn
 
@@ -36,13 +30,13 @@ def create_table(conn):
     """ create tables in the database
     :param conn: Connection object
     """
-    logging.info("Attempting to create tables.")
+    logging.info("Attempting to create tables with SQLite.")
     try:
         c = conn.cursor()
 
-        # Corrected schema for PostgreSQL using SERIAL for auto-incrementing keys.
+        # Schema for SQLite using INTEGER PRIMARY KEY AUTOINCREMENT.
         sql_create_stability_studies_table = """ CREATE TABLE IF NOT EXISTS stability_studies (
-                                        id SERIAL PRIMARY KEY,
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                                         client_code text,
                                         description text NOT NULL,
                                         active_content text,
@@ -64,14 +58,14 @@ def create_table(conn):
                                     ); """
         
         sql_create_storage_schedules_table = """CREATE TABLE IF NOT EXISTS storage_schedules (
-                                            id SERIAL PRIMARY KEY,
+                                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                                             study_id integer NOT NULL,
                                             storage_condition text NOT NULL,
                                             FOREIGN KEY (study_id) REFERENCES stability_studies (id) ON DELETE CASCADE
                                         );"""
 
         sql_create_timepoint_testing_info_table = """CREATE TABLE IF NOT EXISTS timepoint_testing_info (
-                                            id SERIAL PRIMARY KEY,
+                                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                                             schedule_id integer NOT NULL,
                                             timepoint text,
                                             pull_date text NOT NULL,
@@ -82,26 +76,19 @@ def create_table(conn):
                                         );"""
 
         sql_create_master_tests_table = """CREATE TABLE IF NOT EXISTS master_tests (
-                                            id SERIAL PRIMARY KEY,
+                                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                                             test_name text NOT NULL UNIQUE,
                                             test_method text,
                                             form_no text
                                         );"""
         
-        # Drop tables before creating them to ensure schema is always fresh in development
-        # c.execute("DROP TABLE IF EXISTS timepoint_testing_info;")
-        # c.execute("DROP TABLE IF EXISTS storage_schedules;")
-        # c.execute("DROP TABLE IF EXISTS stability_studies;")
-        # c.execute("DROP TABLE IF EXISTS master_tests;")
-
         c.execute(sql_create_stability_studies_table)
         c.execute(sql_create_storage_schedules_table)
         c.execute(sql_create_timepoint_testing_info_table)
         c.execute(sql_create_master_tests_table)
         
         conn.commit()
-        c.close()
-        logging.info("Tables created successfully.")
+        logging.info("Tables created successfully using SQLite schema.")
 
     except Exception as e:
         st.error(f"Table creation error: {e}")
