@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from tabs.utils import create_connection, create_table
 from nicegui_tabs.tab1_setup import tab1_setup_ui
 from nicegui_tabs.tab2_schedule import tab2_schedule_ui
+from nicegui_tabs.tab3_summary import tab3_summary_ui
 
 # --- Database Connection ---
 conn = create_connection()
@@ -40,9 +41,9 @@ def main_page():
     def schedule_page():
         tab2_schedule_ui(conn)
 
-    with ui.page('/summary'):
-        ui.label('Stability Summary (NiceGUI)')
-        ui.label('This page will handle S3 search and uploads.')
+    @ui.page('/summary')
+    def summary_page():
+        tab3_summary_ui(conn)
 
 app.on_shutdown(lambda: conn.close() if conn else None)
 ui.run()
