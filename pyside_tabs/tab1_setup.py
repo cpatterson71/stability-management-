@@ -13,11 +13,36 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QTabWidget,
     QScrollArea,
-    QSpinBox
+    QSpinBox,
+    QFileDialog,
+    QMessageBox
 )
 from PySide6.QtCore import QDate, Qt, QAbstractTableModel
 from dateutil.relativedelta import relativedelta
 import pandas as pd
+
+class PandasModel(QAbstractTableModel):
+    """A model to interface a pandas DataFrame with QTableView."""
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return self._data.shape[0]
+
+    def columnCount(self, parent=None):
+        return self._data.shape[1]
+
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+        if index.isValid():
+            if role == Qt.ItemDataRole.DisplayRole:
+                return str(self._data.iloc[index.row(), index.column()])
+        return None
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+            return self._data.columns[col]
+        return None
 
 class PackagingTableModel(QAbstractTableModel):
     def __init__(self, data):
@@ -73,6 +98,7 @@ class Tab1Setup(QWidget):
         # Keep track of condition checkboxes
         self.condition_checkboxes = {}
         self.condition_tabs = {}
+        self.master_tests_model = None
 
         # --- Main Form ---
         form_layout = QFormLayout()
@@ -104,11 +130,76 @@ class Tab1Setup(QWidget):
         form_layout.addRow("T0 (release date):", self.t0_release_date_input)
         self.layout().addLayout(form_layout)
 
+        # --- Master Tests ---
+        self.setup_master_tests()
+
         # --- Packaging Editor ---
         self.setup_packaging_editor()
 
         # --- Storage Conditions & Timepoints ---
         self.setup_storage_conditions()
+
+    def setup_master_tests(self):
+        master_tests_groupbox = QGroupBox("Step 1: Define Master Tests")
+        master_tests_layout = QVBoxLayout()
+
+        upload_button = QPushButton("Upload Master Test Document (.xlsx)")
+        upload_button.clicked.connect(self.upload_master_tests)
+        master_tests_layout.addWidget(upload_button)
+
+        self.master_tests_table = QTableView()
+        master_tests_layout.addWidget(QLabel("Master Test Methods (loaded from database):"))
+        master_tests_layout.addWidget(self.master_tests_table)
+        
+        master_tests_groupbox.setLayout(master_tests_layout)
+        self.layout().addWidget(master_tests_groupbox)
+
+        # Initial load of tests from DB
+        self.load_master_tests_to_view()
+
+    def upload_master_tests(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open Master Test File", "", "Excel Files (*.xlsx)")
+        if not file_path:
+            return
+
+        try:
+            df = pd.read_excel(file_path)
+            if df.empty or 'Test' not in df.columns or df['Test'].empty:
+                QMessageBox.warning(self, "Warning", "No 'Test' column found or file is empty.")
+                return
+
+            processed_df = df.copy()
+            if 'Test Method' not in processed_df.columns:
+                processed_df['Test Method'] = ''
+            if 'Form No' not in processed_df.columns:
+                processed_df['Form No'] = ''
+            if 'Form #' in processed_df.columns:
+                processed_df['Form No'] = processed_df['Form #']
+
+            cur = self.conn.cursor()
+            for _, row in processed_df.iterrows():
+                # Using INSERT OR IGNORE for SQLite
+                cur.execute("INSERT OR IGNORE INTO master_tests (test_name, test_method, form_no) VALUES (?, ?, ?)",
+                            (row['Test'], row['Test Method'], row['Form No']))
+            self.conn.commit()
+            QMessageBox.information(self, "Success", "Master tests uploaded and saved to database.")
+            self.load_master_tests_to_view()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error reading Excel file or saving to DB: {e}")
+
+    def load_master_tests_to_view(self):
+        try:
+            df = pd.read_sql_query('SELECT test_name AS "Test", test_method AS "Test Method", form_no AS "Form No" FROM master_tests', self.conn)
+            self.master_tests_model = PandasModel(df)
+            self.master_tests_table.setModel(self.master_tests_model)
+            self.master_tests_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        except Exception as e:
+            QMessageBox.critical(self, "Database Error", f"Could not load master tests from database: {e}")
+            # Create an empty model if loading fails
+            self.master_tests_model = PandasModel(pd.DataFrame())
+            self.master_tests_table.setModel(self.master_tests_model)
+
 
     def setup_packaging_editor(self):
         # ... (same as before)
