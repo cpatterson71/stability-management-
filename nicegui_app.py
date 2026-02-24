@@ -8,6 +8,7 @@ import logging
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from tabs.utils import create_connection, create_table
+from nicegui_tabs.tab1_setup import tab1_setup_ui
 
 # --- Database Connection ---
 conn = create_connection()
@@ -30,9 +31,9 @@ def main_page():
         ui.link('Schedule', '/schedule')
         ui.link('Summary', '/summary')
 
-    with ui.page('/setup'):
-        ui.label('Stability Study Setup (NiceGUI)')
-        ui.label('This page will contain the UI for setting up stability studies.')
+    @ui.page('/setup')
+    def setup_page():
+        tab1_setup_ui(conn)
 
     with ui.page('/schedule'):
         ui.label('Stability Schedule (NiceGUI)')
