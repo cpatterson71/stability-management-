@@ -11,6 +11,10 @@ import docx
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
+# S3 Configuration Constants
+S3_BUCKET_NAME = "ai-document-chat-document-store"
+S3_FOLDER_PREFIX = "Stability_Summaries/"
+
 def create_connection():
     """ create a database connection to the SQLite database
     """

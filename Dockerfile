@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application's code into the container at /app
 COPY . .
 
-# When the container launches, run app.py with streamlit.
-# This "shell form" of CMD allows the $PORT environment variable to be correctly interpreted.
-CMD streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS=false --server.enableXsrfProtection=false
+# Expose the port NiceGUI will listen on (default is 8080)
+EXPOSE 8080
+
+# Command to run the NiceGUI application
+# NiceGUI can use environment variables for host and port
+# App Runner will inject the PORT environment variable
+CMD python nicegui_app.py --host 0.0.0.0 --port $PORT
